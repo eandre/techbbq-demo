@@ -1,4 +1,5 @@
 import { api } from "encore.dev/api";
+import { Topic } from "encore.dev/pubsub";
 import { SQLDatabase } from "encore.dev/storage/sqldb";
 import knex from "knex";
 
@@ -20,6 +21,7 @@ export const add = api(
   { expose: true, method: "POST", path: "/site" },
   async (params: AddParams): Promise<Site> => {
     const site = (await Sites().insert({ url: params.url }, "*"))[0];
+    await SiteAdded.publish(site);
     return site;
   }
 );
@@ -67,3 +69,7 @@ const orm = knex({
 });
 
 const Sites = () => orm<Site>("site");
+
+export const SiteAdded = new Topic<Site>("site-added", {
+  deliveryGuarantee: "at-least-once",
+});
